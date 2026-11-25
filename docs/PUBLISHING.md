@@ -1,6 +1,6 @@
 # Publish an experimental release
 
-The current Cloud Registry validator rejects this installer because it compares the submitted release version with the descriptor-format field. NEMESIS defines `version=1.1` as the format and `package-version=0.1.0` as the release. The upstream validator needs to honor `package-version` before the 0.1.0 submission can pass. Keep the manifest and submission version as specified. [Cloud Registry artifact validation](https://github.com/hmason55/nemesis-package-manager/blob/main/tools/registry_artifact.py), [metadata extraction](https://github.com/hmason55/nemesis-package-manager/blob/main/tools/companion_installers.py), [NEMESIS descriptor specification](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md#2-nemesisdata--nemesis).
+The trusted validator now honors `package-version` as the release version. Keep NEMESIS descriptor format `version=1.1` and package release `package-version=0.1.0` distinct. The vehicle needs a Package Manager build that includes the same downloader fix. [Package Manager PR #59](https://github.com/hmason55/nemesis-package-manager/pull/59).
 
 Use a public GitHub source repository with the Cloud Registry GitHub App installed for that repository. The Android package remains `gen5w.svm.diagnostics` even if the GitHub repository name differs.
 
