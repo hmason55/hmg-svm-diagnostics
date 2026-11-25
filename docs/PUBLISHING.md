@@ -1,5 +1,7 @@
 # Publish an experimental release
 
+The current Cloud Registry validator rejects this installer because it compares the submitted release version with the descriptor-format field. NEMESIS defines `version=1.1` as the format and `package-version=0.1.0` as the release. The upstream validator needs to honor `package-version` before the 0.1.0 submission can pass. Keep the manifest and submission version as specified. [Cloud Registry artifact validation](https://github.com/hmason55/nemesis-package-manager/blob/main/tools/registry_artifact.py), [metadata extraction](https://github.com/hmason55/nemesis-package-manager/blob/main/tools/companion_installers.py), [NEMESIS descriptor specification](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md#2-nemesisdata--nemesis).
+
 Use a public GitHub source repository with the Cloud Registry GitHub App installed for that repository. The Android package remains `gen5w.svm.diagnostics` even if the GitHub repository name differs.
 
 1. Configure repository Actions secrets `SVM_KEYSTORE_BASE64`, `SVM_STORE_PASSWORD`, `SVM_KEY_ALIAS` and `SVM_KEY_PASSWORD`. The base64 value is a persistent signing keystore. Keep a backup outside the repository so updates can use the same certificate.
