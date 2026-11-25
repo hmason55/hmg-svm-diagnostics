@@ -1,0 +1,116 @@
+name: Publish experimental SVM diagnostics
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version from VERSION on main
+        required: true
+        default: '0.1.0'
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: svm-experimental-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Match the version in source
+        env:
+          VERSION_REQUESTED: ${{ inputs.version }}
+        run: test "$VERSION_REQUESTED" = "$(cat VERSION)"
+      - run: python -m unittest discover -s tests -v
+      - name: Test and sign APK
+        env:
+          SVM_KEYSTORE_BASE64: ${{ secrets.SVM_KEYSTORE_BASE64 }}
+          SVM_STORE_PASSWORD: ${{ secrets.SVM_STORE_PASSWORD }}
+          SVM_KEY_ALIAS: ${{ secrets.SVM_KEY_ALIAS }}
+          SVM_KEY_PASSWORD: ${{ secrets.SVM_KEY_PASSWORD }}
+          SVM_KEYSTORE: ${{ runner.temp }}/svm-release.jks
+        shell: bash
+        run: |
+          umask 077
+          trap 'rm -f "$SVM_KEYSTORE"' EXIT
+          test -n "$SVM_KEYSTORE_BASE64"
+          printf '%s' "$SVM_KEYSTORE_BASE64" | base64 --decode > "$SVM_KEYSTORE"
+          gradle --no-daemon :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
+      - run: python tools/build_package.py app/build/outputs/apk/release/app-release.apk --release
+      - name: Publish complete experimental prerelease
+        uses: actions/github-script@v8
+        env:
+          SVM_VERSION: ${{ inputs.version }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const { createHash } = require('node:crypto');
+            const version = process.env.SVM_VERSION;
+            if (!/^(0|[1-9]\d{0,2})\.(0|[1-9]\d{0,2})\.(0|[1-9]\d{0,2})$/.test(version)) {
+              throw new Error('Invalid version');
+            }
+            const tag = 'v' + version;
+            const repo = context.repo;
+            let ref;
+            try {
+              ref = (await github.rest.git.getRef({...repo, ref: 'tags/' + tag})).data;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+            if (ref && (ref.object.type !== 'commit' || ref.object.sha !== context.sha)) {
+              throw new Error('The version tag belongs to another commit.');
+            }
+            if (!ref) {
+              await github.rest.git.createRef({...repo, ref: 'refs/tags/' + tag, sha: context.sha});
+            }
+            const releases = await github.paginate(github.rest.repos.listReleases, {...repo, per_page: 100});
+            let release = releases.find(item => item.tag_name === tag);
+            if (release && !release.draft) throw new Error('This version has already been published.');
+            if (!release) {
+              release = (await github.rest.repos.createRelease({
+                ...repo,
+                tag_name: tag,
+                target_commitish: context.sha,
+                name: 'SVM Diagnostics ' + version + ' (experimental)',
+                draft: true,
+                prerelease: true,
+                body: 'Experimental observational build for the US 2023 Hyundai IONIQ 5 Limited Gen5W with SVM. Exact firmware and vehicle compatibility are unverified. Includes source under AGPL-3.0 and a signed direct NEMESIS installer.'
+              })).data;
+            }
+            const args = {...repo, release_id: release.id};
+            const assets = await github.paginate(github.rest.repos.listReleaseAssets, {...args, per_page: 100});
+            const zip = 'gen5w-svm-diagnostics-' + version + '.zip';
+            const expectedNames = [zip, 'SHA256SUMS'];
+            if (assets.some(asset => !expectedNames.includes(asset.name))) throw new Error('Unexpected draft asset.');
+            for (const name of expectedNames) {
+              const data = fs.readFileSync('dist/' + name);
+              const digest = 'sha256:' + createHash('sha256').update(data).digest('hex');
+              let asset = assets.find(item => item.name === name);
+              if (!asset) {
+                asset = (await github.rest.repos.uploadReleaseAsset({...args, name, data, headers: {
+                  'content-type': name === zip ? 'application/zip' : 'text/plain',
+                  'content-length': data.length
+                }})).data;
+              }
+              if (asset.state !== 'uploaded' || asset.size !== data.length || asset.digest !== digest) {
+                throw new Error('GitHub asset integrity check failed for ' + name + '.');
+              }
+            }
+            await github.rest.repos.updateRelease({...args, draft: false, prerelease: true, make_latest: 'false'});

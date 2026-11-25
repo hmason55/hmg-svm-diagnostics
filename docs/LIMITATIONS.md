@@ -1,0 +1,9 @@
+# Known limitations
+
+- This is an observational first build. No SVM frame source is confirmed. A downstream interface or log hint is insufficient to establish camera power, transmission, controller processing, reception or display. There is no reconstruction or frame recording.
+- The app UID may see no useful factory log lines on KitKat. The collector relies on a fixed list of tags and wall-clock log timestamps. OEM tag variations, buffer permissions, a clock change, saturation or device suspend can reduce coverage. Raw messages, PIDs and command stderr are discarded.
+- Samples track visibility for video paths found during inventory and registration of the standard camera service if discovered. New device paths or short-lived changes between samples can be missed. No permission elevation is attempted.
+- The Android incremental build displayed by the dashboard may differ from the head unit's full OEM firmware string. Confirm the latter through SW Info while parked.
+- This app has no verified speed source or reliable Park signal. Parked use is an operator requirement. Use an external timeline for speed and UI correlations. Background timing depends on the head unit's scheduler and power state.
+- Wireless export uses a temporary token and local HTTP over a selected private or link-local IPv4 address. The Android device and client must be able to reach each other. A session interrupted before its atomic summary is retained for local inspection and is ineligible for wireless export.
+- API 19 build and ABI checks, fixture tests and host loopback networking cannot establish head-unit behavior. Vehicle compatibility, factory-camera noninterference, hotspot interoperability and Cloud Registry installation require a physical validation run. The target firmware remains unverified.

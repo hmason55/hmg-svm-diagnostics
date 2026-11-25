@@ -1,0 +1,7 @@
+Found 6 services:
+0       media.camera: [android.hardware.ICameraService]
+1       com.hkmc.micom.pgs: [com.hkmc.micom.pgs.IPgsService]
+2       vendor.svm: [vendor.svm.Status]
+3       accounts: [android.accounts.IAccountManager]
+4       malformed service row
+5       camera.KM8KRDAF9PU123456: [vendor.ICamera]

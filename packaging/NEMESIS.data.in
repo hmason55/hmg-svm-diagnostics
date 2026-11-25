@@ -1,0 +1,13 @@
+[nemesis]
+version=1.1
+id=gen5w.svm.diagnostics
+name=SVM Diagnostics (experimental)
+package-version=@VERSION@
+short-desc=Experimental camera diagnostics for Gen5W
+detailed-desc=Observation only. Intended for US 2023 IONIQ 5 Gen5W with SVM. Exact firmware and vehicle compatibility are unverified.
+
+[app.0]
+kind=apk
+path=app/SvmDiagnostics.apk
+package=gen5w.svm.diagnostics
+component=gen5w.svm.diagnostics/.MainActivity

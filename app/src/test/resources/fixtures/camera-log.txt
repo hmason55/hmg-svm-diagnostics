@@ -1,0 +1,5 @@
+11-24 15:04:04.001   101   202 I AccountManager: driver@example.test
+11-24 15:04:05.001   101   202 I RearCamera: opened for VIN KM8KRDAF9PU123456 driver@example.test
+11-24 15:04:06.001   101   202 D SVM: frame count 500 phone=3125550101
+11-24 15:04:07.001   101   202 I BVM: stopped GPS 37.42,-122.08
+11-24 15:04:08.001   101   202 I AVM: unrelated message
