@@ -27,6 +27,8 @@ public final class SessionService extends Service {
     static final String SERVICES = "services";
     static final String LOGS = "logs";
     static volatile JSONObject inventory;
+    static volatile JSONObject latestSample;
+    static volatile long wallStartMs;
     static volatile String state = "Idle";
     static volatile String sessionId;
     static volatile long started;
@@ -69,6 +71,8 @@ public final class SessionService extends Service {
         sessionId = null;
         started = 0;
         sampleCount = 0;
+        latestSample = null;
+        wallStartMs = 0;
         PendingIntent dashboard = PendingIntent.getActivity(this, 0,
                 new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
         startForeground(1, new Notification.Builder(this)
@@ -119,6 +123,7 @@ public final class SessionService extends Service {
         }
         started = SystemClock.elapsedRealtime();
         long wallStarted = System.currentTimeMillis();
+        wallStartMs = wallStarted;
         long cpuStart = Debug.threadCpuTimeNanos();
         SessionFiles files = SessionFiles.create(root(this), wallStarted);
         sessionId = files.id;
@@ -243,6 +248,7 @@ public final class SessionService extends Service {
                 throw e;
             }
             report.errorCount += errors.length();
+            latestSample = row;
             sampleCount = ++report.sampleCount;
             nextTick = Math.max(nextTick + SessionPolicy.INTERVAL_MS, SystemClock.elapsedRealtime());
             long wait = Math.min(nextTick - SystemClock.elapsedRealtime(), SessionPolicy.DURATION_MS - elapsed());

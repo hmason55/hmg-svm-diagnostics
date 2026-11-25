@@ -41,6 +41,7 @@ public final class MainActivity extends Activity {
     private Button export;
     private Button delete;
     private AlertDialog exportDialog;
+    private FeedbackDialog photoDialog;
     private final Runnable refresh = new Runnable() {
         @Override public void run() {
             updateDashboard();
@@ -66,6 +67,12 @@ public final class MainActivity extends Activity {
         guidance.setText("Experimental · Configure and use controls while parked.");
         guidance.setTextSize(16);
         panel.addView(guidance);
+        Button photo = new Button(this);
+        photo.setText("Photo View");
+        photo.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) { choosePhotoView(); }
+        });
+        panel.addView(photo);
         dashboard = new TextView(this);
         dashboard.setTextSize(17);
         dashboard.setPadding(0, margin, 0, margin);
@@ -148,6 +155,7 @@ public final class MainActivity extends Activity {
     @Override protected void onStop() {
         ui.removeCallbacks(refresh);
         if (exportDialog != null) exportDialog.dismiss();
+        if (photoDialog != null) photoDialog.dismiss();
         super.onStop();
     }
 
@@ -210,7 +218,8 @@ public final class MainActivity extends Activity {
                         SessionFiles files = matching.get(which);
                         if (operation == 0) view(files);
                         else if (operation == 1) chooseAddress(files);
-                        else confirmDelete(files);
+                        else if (operation == 2) confirmDelete(files);
+                        else photoView(files);
                     }
                 }).show();
     }
@@ -228,6 +237,70 @@ public final class MainActivity extends Activity {
         }
         new AlertDialog.Builder(this).setTitle("Session summary").setMessage(text)
                 .setPositiveButton("Close", null).show();
+    }
+
+    private void choosePhotoView() {
+        new AlertDialog.Builder(this).setTitle("Photo view")
+                .setItems(new String[]{"Current feedback", "Saved session"}, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface dialog, int which) {
+                        if (which == 0) photoView(null);
+                        else chooseSession("Choose a session to photograph", false, 3);
+                    }
+                }).setNegativeButton("Cancel", null).show();
+    }
+
+    private void photoView(SessionFiles files) {
+        JSONObject summary = null;
+        JSONObject sample = SessionService.latestSample;
+        JSONObject inventory = SessionService.inventory;
+        JSONArray problems = null;
+        JSONArray hints = null;
+        long startedAt = SessionService.wallStartMs;
+        long elapsed = SessionService.started == 0 ? -1
+                : Math.max(0, SystemClock.elapsedRealtime() - SessionService.started);
+        String state = SessionService.state;
+        String id = SessionService.sessionId;
+        int sampleCount = SessionService.sampleCount;
+        if (files != null) {
+            id = files.id;
+            summary = files.readObject("summary.json");
+            inventory = files.readObject("inventory.json");
+            startedAt = files.readObject("metadata.json").optLong("wallStartMs");
+            JSONArray rows = files.recover("samples.jsonl", 500);
+            sample = rows.optJSONObject(rows.length() - 1);
+            sampleCount = rows.length();
+            elapsed = sample == null ? -1 : sample.optLong("elapsedMs", -1);
+            problems = files.recover("errors.jsonl", 96);
+            hints = files.recover("camera-events.jsonl", 32);
+            state = files.complete() ? "Completed" : "Interrupted";
+        } else if (id != null && !SessionService.busy) {
+            // Use the on-disk report for the just-finished session, including its stop reason.
+            File current = new File(SessionService.root(this), id);
+            if (current.isDirectory()) {
+                photoView(new SessionFiles(current));
+                return;
+            }
+        }
+
+        String version = "Unknown";
+        try {
+            version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (android.content.pm.PackageManager.NameNotFoundException ignored) {}
+        JSONObject snapshot = Observations.json("saved", files != null, "state", state,
+                "inventory", inventory, "summary", summary, "sample", sample,
+                "problems", problems, "hints", hints, "elapsedMs", elapsed,
+                "wallStartMs", startedAt, "sampleCount", sampleCount,
+                "android", Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")",
+                "abi", Build.CPU_ABI, "storage", String.format(Locale.US, "%.1f MB",
+                        getFilesDir().getUsableSpace() / 1000000.0));
+        String caption = "SVM Diagnostics " + version + "  ·  "
+                + (id == null ? "No session selected" : id) + "  ·  "
+                + FeedbackPages.timestamp(System.currentTimeMillis());
+        photoDialog = new FeedbackDialog(this, FeedbackPages.build(snapshot), caption);
+        photoDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override public void onDismiss(DialogInterface dialog) { photoDialog = null; }
+        });
+        photoDialog.show();
     }
 
     private void confirmDelete(final SessionFiles files) {

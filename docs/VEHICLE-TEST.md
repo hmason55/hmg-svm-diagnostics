@@ -7,8 +7,9 @@ Target a US 2023 Hyundai IONIQ 5 Limited RWD equipped with SVM and an Android Ge
 1. Install the signed experimental package using Cloud Registry with no USB connected. Launch from Package Manager.
 2. Establish a baseline for factory reverse and SVM views with the diagnostic app idle. Run **Scan System**, review inventory and verify that stock views still open and close normally. Repeat while a short diagnostic session runs with the dashboard in the background.
 3. Stop collection while parked. Open **View Summary** and verify timestamps, sample count, explicit capability errors and separate pipeline evidence states. Check that stopped collection does not grow the session.
-4. Join a trusted Wi-Fi network or shared hotspot. Select **Export Session**, choose the matching interface and download the archive on the second device. Inspect its contents, verify that closing the export dialog stops the download endpoint, and repeat to verify the five-minute limit.
-5. Reopen the app after a shutdown or interruption. Confirm that collection stays stopped and existing sessions are readable. Record any missing capabilities. If stock camera behavior changes, stop this test before proceeding.
+4. For a photo record, open **Photo View** and select **Current feedback** or the saved session. Photograph the numbered pages in order. Include the page number, app build, and session ID in each picture. Share the complete ZIP when a detailed timeline is needed.
+5. Join a trusted Wi-Fi network or shared hotspot. Select **Export Session**, choose the matching interface and download the archive on the second device. Inspect its contents, verify that closing the export dialog stops the download endpoint, and repeat to verify the five-minute limit.
+6. Reopen the app after a shutdown or interruption. Confirm that collection stays stopped and existing sessions are readable. Record any missing capabilities. If stock camera behavior changes, stop this test before proceeding.
 
 ## Moving observation
 

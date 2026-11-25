@@ -6,6 +6,8 @@ Configure, start, stop and export sessions while parked. By default a foreground
 
 Device visibility and Binder registration provide interface evidence. On this build SVM frame delivery, physical camera activity and measured vehicle speed all remain unknown.
 
+For debugging photos, tap **Photo View** and choose **Current feedback** or a saved session. The screen stays awake and shows large, numbered pages with the build and session ID in the header. Use **Next** to photograph each page while parked.
+
 ## Build and verify
 
 Use JDK 17, Gradle 8.10.2, Python 3.12 and Android SDK Platform 35 with Build Tools 35.0.0. Set `ANDROID_HOME` and accept the Android SDK licenses.
